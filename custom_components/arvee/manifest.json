@@ -1,0 +1,11 @@
+{
+  "codeowners": ["@ThisSmartHouse"],
+  "config_flow": false,
+  "dependencies": [],
+  "documentation": "https://github.com/ThisSmartHouse/hass-arvee",
+  "domain": "arvee",
+  "iot_class": "assumed_state",
+  "name": "Arvee",
+  "requirements": [],
+  "version": "1.0.0"
+}
