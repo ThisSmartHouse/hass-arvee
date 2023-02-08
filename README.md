@@ -12,7 +12,7 @@ The library uses the Python `timezonefinder` package to look up timezones comple
 
 ### NOTE ON CONTAINER-BASED HOME ASSISTANT
 
-There is a bug in the current docker `ghcr.io/home-assistant/home-assistant` container version (as of 02/02/2023) you can follow [here](https://github.com/home-assistant/core/issues/87682). The `timezonefinder` package requires the container to have compilers and build tools to install. To fix this you can log into the container with an interactive shell and install them manually:
+The `timezonefinder` package requires the container to have compilers and build tools to install. You can read [here](https://github.com/home-assistant/core/issues/87682) as to why. To fix this you can log into the container with an interactive shell and install them manually:
 
 ```
 $ docker exec -it homeassistant /bin/bash
