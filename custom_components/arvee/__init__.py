@@ -1,6 +1,11 @@
+import homeassistant.core as ha
+
+import voluptuous as vol
+
 from homeassistant import core
 from homeassistant.helpers import config_validation as cv
-from .const import DOMAIN, ATTR_TIMEZONE
+from homeassistant.helpers.service import async_register_admin_service
+from .const import DOMAIN, ATTR_TIMEZONE, SERVICE_SET_TIMEZONE
 
 async def async_setup(hass: core.HomeAssistant, config: dict) -> bool:
     """Set up the Arvee component."""
