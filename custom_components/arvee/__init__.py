@@ -20,7 +20,7 @@ async def async_setup(hass: core.HomeAssistant, config: dict) -> bool:
 
     async def async_set_timezone_geo(call: ha.ServiceCall) -> None:
         """Service handler to set timezone by lat/lng"""
-        result = get_tz(lng=call.data[ATTR_LONGITUDE, lat=call.data[ATTR_LATITUDE]])
+        result = get_tz(call.data[ATTR_LONGITUDE, call.data[ATTR_LATITUDE]])
 
         if result is None:
             return
