@@ -7,7 +7,7 @@
   "iot_class": "assumed_state",
   "name": "Arvee",
   "requirements": [
-    "tzfpy==0.15.3"
+    "git+https://github.com/ringsaturn/tzfpy@main#tzfpy==0.15.3"
   ],
   "version": "1.2.0"
 }
