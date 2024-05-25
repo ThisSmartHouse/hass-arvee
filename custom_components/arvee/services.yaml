@@ -1,0 +1,18 @@
+# Service ID
+set_geo_timezone:
+  # Different fields that your service accepts
+  fields:
+    # Key of the field
+    latitude:
+      # Whether or not field is required (default = false)
+      required: true
+      # Example value that can be passed for this field
+      example: "38.8951"
+    longitude:
+      required: true
+      example: "-77.0364"
+set_timezone:
+  fields:
+    timezone:
+      required: true
+      example: "America/New_York"
