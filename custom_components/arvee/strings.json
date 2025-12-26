@@ -1,0 +1,51 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Configure Arvee",
+        "description": "Set up automatic timezone management based on GPS location.",
+        "data": {
+          "latitude_entity": "Latitude Entity",
+          "longitude_entity": "Longitude Entity",
+          "update_threshold": "Update Threshold (miles)"
+        },
+        "data_description": {
+          "latitude_entity": "Entity that provides the current latitude (e.g., from a GPS tracker or phone)",
+          "longitude_entity": "Entity that provides the current longitude",
+          "update_threshold": "Minimum distance (in miles) before updating location and timezone"
+        }
+      }
+    },
+    "error": {
+      "entity_not_found": "Entity not found",
+      "invalid_latitude": "Entity does not have a valid numeric latitude value",
+      "invalid_longitude": "Entity does not have a valid numeric longitude value"
+    },
+    "abort": {
+      "already_configured": "Arvee is already configured"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Arvee Options",
+        "description": "Update Arvee configuration.",
+        "data": {
+          "latitude_entity": "Latitude Entity",
+          "longitude_entity": "Longitude Entity",
+          "update_threshold": "Update Threshold (miles)"
+        },
+        "data_description": {
+          "latitude_entity": "Entity that provides the current latitude",
+          "longitude_entity": "Entity that provides the current longitude",
+          "update_threshold": "Minimum distance (in miles) before updating location and timezone"
+        }
+      }
+    },
+    "error": {
+      "entity_not_found": "Entity not found",
+      "invalid_latitude": "Entity does not have a valid numeric latitude value",
+      "invalid_longitude": "Entity does not have a valid numeric longitude value"
+    }
+  }
+}

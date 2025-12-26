@@ -1,13 +1,14 @@
 {
   "codeowners": ["@ThisSmartHouse"],
-  "config_flow": false,
+  "config_flow": true,
   "dependencies": [],
   "documentation": "https://github.com/ThisSmartHouse/hass-arvee",
   "domain": "arvee",
-  "iot_class": "assumed_state",
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/ThisSmartHouse/hass-arvee/issues",
   "name": "Arvee",
   "requirements": [
-    "timezonefinder==6.1.9"
+    "tzfpy>=0.15.0"
   ],
-  "version": "1.1.0"
+  "version": "2.0.0"
 }

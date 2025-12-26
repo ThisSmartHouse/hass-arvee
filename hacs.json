@@ -1,5 +1,5 @@
 {
   "name": "Arvee",
-  "render_readme": true,
-  "iot_class": "assumed_state"
+  "homeassistant": "2024.1.0",
+  "render_readme": true
 }

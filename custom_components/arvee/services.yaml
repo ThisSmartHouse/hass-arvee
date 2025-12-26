@@ -1,0 +1,38 @@
+set_timezone:
+  name: Set Timezone
+  description: Set the Home Assistant timezone directly.
+  fields:
+    timezone:
+      name: Timezone
+      description: Timezone in IANA format (e.g., America/New_York)
+      required: true
+      example: "America/New_York"
+      selector:
+        text:
+
+set_geo_timezone:
+  name: Set Geographic Timezone
+  description: Set Home Assistant location and timezone based on coordinates.
+  fields:
+    latitude:
+      name: Latitude
+      description: Latitude coordinate
+      required: true
+      example: 40.7128
+      selector:
+        number:
+          min: -90
+          max: 90
+          step: 0.0001
+          mode: box
+    longitude:
+      name: Longitude
+      description: Longitude coordinate
+      required: true
+      example: -74.0060
+      selector:
+        number:
+          min: -180
+          max: 180
+          step: 0.0001
+          mode: box
