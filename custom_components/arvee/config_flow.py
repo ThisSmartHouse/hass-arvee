@@ -15,6 +15,7 @@ from .const import (
     DOMAIN,
     CONF_LATITUDE_ENTITY,
     CONF_LONGITUDE_ENTITY,
+    CONF_ELEVATION_ENTITY,
     CONF_UPDATE_THRESHOLD,
     DEFAULT_UPDATE_THRESHOLD,
 )
@@ -35,6 +36,12 @@ def get_schema(defaults: dict[str, Any] | None = None) -> vol.Schema:
         vol.Required(
             CONF_LONGITUDE_ENTITY,
             default=defaults.get(CONF_LONGITUDE_ENTITY, ""),
+        ): selector.EntitySelector(
+            selector.EntitySelectorConfig(domain=["sensor", "device_tracker", "input_number"]),
+        ),
+        vol.Optional(
+            CONF_ELEVATION_ENTITY,
+            default=defaults.get(CONF_ELEVATION_ENTITY, ""),
         ): selector.EntitySelector(
             selector.EntitySelectorConfig(domain=["sensor", "device_tracker", "input_number"]),
         ),
@@ -72,6 +79,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             # Validate that entities exist and have numeric values
             lat_entity = user_input[CONF_LATITUDE_ENTITY]
             lon_entity = user_input[CONF_LONGITUDE_ENTITY]
+            elev_entity = user_input.get(CONF_ELEVATION_ENTITY)
 
             lat_state = self.hass.states.get(lat_entity)
             lon_state = self.hass.states.get(lon_entity)
@@ -85,6 +93,14 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors[CONF_LONGITUDE_ENTITY] = "entity_not_found"
             elif not _is_numeric(lon_state.state):
                 errors[CONF_LONGITUDE_ENTITY] = "invalid_longitude"
+
+            # Only validate elevation entity if one is provided
+            if elev_entity:
+                elev_state = self.hass.states.get(elev_entity)
+                if elev_state is None:
+                    errors[CONF_ELEVATION_ENTITY] = "entity_not_found"
+                elif not _is_numeric(elev_state.state):
+                    errors[CONF_ELEVATION_ENTITY] = "invalid_elevation"
 
             if not errors:
                 return self.async_create_entry(title="Arvee", data=user_input)
@@ -116,6 +132,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         if user_input is not None:
             lat_entity = user_input[CONF_LATITUDE_ENTITY]
             lon_entity = user_input[CONF_LONGITUDE_ENTITY]
+            elev_entity = user_input.get(CONF_ELEVATION_ENTITY)
 
             lat_state = self.hass.states.get(lat_entity)
             lon_state = self.hass.states.get(lon_entity)
@@ -129,6 +146,14 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 errors[CONF_LONGITUDE_ENTITY] = "entity_not_found"
             elif not _is_numeric(lon_state.state):
                 errors[CONF_LONGITUDE_ENTITY] = "invalid_longitude"
+
+            # Only validate elevation entity if one is provided
+            if elev_entity:
+                elev_state = self.hass.states.get(elev_entity)
+                if elev_state is None:
+                    errors[CONF_ELEVATION_ENTITY] = "entity_not_found"
+                elif not _is_numeric(elev_state.state):
+                    errors[CONF_ELEVATION_ENTITY] = "invalid_elevation"
 
             if not errors:
                 return self.async_create_entry(title="", data=user_input)

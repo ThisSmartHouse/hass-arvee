@@ -10,6 +10,7 @@ A Home Assistant integration designed for mobile installations (RVs, boats, etc.
 
 - **Automatic Location Tracking**: Configure GPS entities and Arvee automatically updates Home Assistant's home location
 - **Automatic Timezone Updates**: Timezone is automatically determined based on your coordinates using offline lookup
+- **Optional Elevation Support**: Configure an elevation entity to keep Home Assistant's elevation in sync with your GPS altitude
 - **Configurable Threshold**: Set a minimum distance (in miles) before updates are triggered to avoid constant updates
 - **Manual Services**: Services available for manual timezone/location control via automations
 
@@ -37,7 +38,8 @@ A Home Assistant integration designed for mobile installations (RVs, boats, etc.
 2. Click **+ Add Integration**
 3. Search for "Arvee"
 4. Select your latitude and longitude entities (from a GPS tracker, phone, etc.)
-5. Set the update threshold (minimum distance in miles before updating)
+5. Optionally select an elevation entity to track altitude (supports meters or feet with automatic conversion)
+6. Set the update threshold (minimum distance in miles before updating)
 
 ### GPS Entity Sources
 
@@ -65,13 +67,16 @@ Manually set location and timezone based on coordinates.
 |-------|-------------|---------|
 | `latitude` | Latitude coordinate | `40.7128` |
 | `longitude` | Longitude coordinate | `-74.0060` |
+| `elevation` | Elevation value (optional) | `100` |
+| `elevation_unit` | Unit for elevation: `m` (meters) or `ft` (feet). Default: `m` | `ft` |
 
 ## How It Works
 
-1. Arvee monitors the configured latitude/longitude entities for state changes
+1. Arvee monitors the configured latitude/longitude entities (and optionally elevation) for state changes
 2. When a change is detected, it calculates the distance from the last known position
 3. If the distance exceeds the configured threshold, it:
    - Updates Home Assistant's home latitude/longitude
+   - Updates elevation if an elevation entity is configured
    - Looks up the timezone for the new coordinates (using `tzfpy` - fully offline)
    - Updates Home Assistant's timezone
 
@@ -79,6 +84,7 @@ Manually set location and timezone based on coordinates.
 
 - **Timezone Display**: Home Assistant's UI uses friendly names for timezones (e.g., "Eastern Time" for `America/New_York`). If you're in a less common timezone, the dropdown in Settings may appear blank, but the timezone is still correctly set.
 - **Offline Operation**: Timezone lookups are performed entirely offline using the `tzfpy` library - no internet connection required.
+- **Elevation Units**: When using an elevation entity, Arvee automatically detects the unit from the entity's `unit_of_measurement` attribute and converts feet to meters if needed. Home Assistant stores elevation in meters.
 
 ## Troubleshooting
 

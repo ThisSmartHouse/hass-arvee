@@ -34,6 +34,19 @@ async def mock_gps_entities(hass: HomeAssistant):
 
 
 @pytest.fixture
+async def mock_gps_entities_with_elevation(hass: HomeAssistant):
+    """Create mock GPS entities including elevation."""
+    hass.states.async_set("sensor.test_latitude", "40.7128")
+    hass.states.async_set("sensor.test_longitude", "-74.0060")
+    hass.states.async_set("sensor.test_elevation", "100")
+    return {
+        "latitude": "sensor.test_latitude",
+        "longitude": "sensor.test_longitude",
+        "elevation": "sensor.test_elevation",
+    }
+
+
+@pytest.fixture
 async def mock_gps_entities_invalid(hass: HomeAssistant):
     """Create mock GPS entities with invalid values."""
     hass.states.async_set("sensor.test_latitude", "unknown")
@@ -41,4 +54,17 @@ async def mock_gps_entities_invalid(hass: HomeAssistant):
     return {
         "latitude": "sensor.test_latitude",
         "longitude": "sensor.test_longitude",
+    }
+
+
+@pytest.fixture
+async def mock_gps_entities_invalid_elevation(hass: HomeAssistant):
+    """Create mock GPS entities with invalid elevation."""
+    hass.states.async_set("sensor.test_latitude", "40.7128")
+    hass.states.async_set("sensor.test_longitude", "-74.0060")
+    hass.states.async_set("sensor.test_elevation", "unknown")
+    return {
+        "latitude": "sensor.test_latitude",
+        "longitude": "sensor.test_longitude",
+        "elevation": "sensor.test_elevation",
     }
