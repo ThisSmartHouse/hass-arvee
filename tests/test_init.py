@@ -12,7 +12,11 @@ from custom_components.arvee.const import (
     SERVICE_SET_GEO_TIMEZONE,
     ATTR_LATITUDE,
     ATTR_LONGITUDE,
+    ATTR_ELEVATION,
+    ATTR_ELEVATION_UNIT,
     ATTR_TIMEZONE,
+    UNIT_FEET,
+    FEET_TO_METERS,
 )
 from custom_components.arvee import _haversine_miles
 from custom_components.arvee.config_flow import _is_numeric
@@ -123,5 +127,47 @@ class TestSetGeoTimezoneService:
 
         assert hass.config.latitude == 40.7128
         assert hass.config.longitude == -74.0060
+        assert hass.config.time_zone == "America/New_York"
+        mock_tzfpy.assert_called_once_with(-74.0060, 40.7128)
+
+    async def test_set_geo_timezone_with_elevation(self, hass: HomeAssistant, mock_tzfpy):
+        """Test setting timezone via coordinates with elevation."""
+        await async_setup_component(hass, DOMAIN, {})
+        await hass.async_block_till_done()
+
+        await hass.services.async_call(
+            DOMAIN,
+            SERVICE_SET_GEO_TIMEZONE,
+            {ATTR_LATITUDE: 40.7128, ATTR_LONGITUDE: -74.0060, ATTR_ELEVATION: 100},
+            blocking=True,
+        )
+
+        assert hass.config.latitude == 40.7128
+        assert hass.config.longitude == -74.0060
+        assert hass.config.elevation == 100
+        assert hass.config.time_zone == "America/New_York"
+        mock_tzfpy.assert_called_once_with(-74.0060, 40.7128)
+
+    async def test_set_geo_timezone_with_elevation_feet(self, hass: HomeAssistant, mock_tzfpy):
+        """Test setting timezone via coordinates with elevation in feet."""
+        await async_setup_component(hass, DOMAIN, {})
+        await hass.async_block_till_done()
+
+        await hass.services.async_call(
+            DOMAIN,
+            SERVICE_SET_GEO_TIMEZONE,
+            {
+                ATTR_LATITUDE: 40.7128,
+                ATTR_LONGITUDE: -74.0060,
+                ATTR_ELEVATION: 328,
+                ATTR_ELEVATION_UNIT: UNIT_FEET,
+            },
+            blocking=True,
+        )
+
+        assert hass.config.latitude == 40.7128
+        assert hass.config.longitude == -74.0060
+        # 328 feet * 0.3048 = 99.9744 meters
+        assert abs(hass.config.elevation - (328 * FEET_TO_METERS)) < 0.01
         assert hass.config.time_zone == "America/New_York"
         mock_tzfpy.assert_called_once_with(-74.0060, 40.7128)

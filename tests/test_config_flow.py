@@ -11,6 +11,7 @@ from custom_components.arvee.const import (
     DOMAIN,
     CONF_LATITUDE_ENTITY,
     CONF_LONGITUDE_ENTITY,
+    CONF_ELEVATION_ENTITY,
     CONF_UPDATE_THRESHOLD,
 )
 
@@ -107,6 +108,69 @@ class TestConfigFlow:
         )
         assert result["type"] == FlowResultType.ABORT
         assert result["reason"] == "already_configured"
+
+    async def test_form_with_elevation(self, hass: HomeAssistant, mock_gps_entities_with_elevation, mock_tzfpy):
+        """Test form with valid input including elevation creates entry."""
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_USER}
+        )
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                CONF_LATITUDE_ENTITY: "sensor.test_latitude",
+                CONF_LONGITUDE_ENTITY: "sensor.test_longitude",
+                CONF_ELEVATION_ENTITY: "sensor.test_elevation",
+                CONF_UPDATE_THRESHOLD: 10.0,
+            },
+        )
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        assert result["title"] == "Arvee"
+        assert result["data"] == {
+            CONF_LATITUDE_ENTITY: "sensor.test_latitude",
+            CONF_LONGITUDE_ENTITY: "sensor.test_longitude",
+            CONF_ELEVATION_ENTITY: "sensor.test_elevation",
+            CONF_UPDATE_THRESHOLD: 10.0,
+        }
+
+    async def test_form_invalid_elevation(self, hass: HomeAssistant, mock_gps_entities_invalid_elevation):
+        """Test form with invalid elevation value shows error."""
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_USER}
+        )
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                CONF_LATITUDE_ENTITY: "sensor.test_latitude",
+                CONF_LONGITUDE_ENTITY: "sensor.test_longitude",
+                CONF_ELEVATION_ENTITY: "sensor.test_elevation",
+                CONF_UPDATE_THRESHOLD: 10.0,
+            },
+        )
+
+        assert result["type"] == FlowResultType.FORM
+        assert result["errors"][CONF_ELEVATION_ENTITY] == "invalid_elevation"
+
+    async def test_form_elevation_entity_not_found(self, hass: HomeAssistant, mock_gps_entities):
+        """Test form with non-existent elevation entity shows error."""
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_USER}
+        )
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                CONF_LATITUDE_ENTITY: "sensor.test_latitude",
+                CONF_LONGITUDE_ENTITY: "sensor.test_longitude",
+                CONF_ELEVATION_ENTITY: "sensor.nonexistent_elevation",
+                CONF_UPDATE_THRESHOLD: 10.0,
+            },
+        )
+
+        assert result["type"] == FlowResultType.FORM
+        assert result["errors"][CONF_ELEVATION_ENTITY] == "entity_not_found"
 
 
 @pytest.mark.asyncio

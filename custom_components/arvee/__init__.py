@@ -25,11 +25,17 @@ from .const import (
     SERVICE_SET_GEO_TIMEZONE,
     CONF_LATITUDE_ENTITY,
     CONF_LONGITUDE_ENTITY,
+    CONF_ELEVATION_ENTITY,
     CONF_UPDATE_THRESHOLD,
     DEFAULT_UPDATE_THRESHOLD,
     ATTR_LATITUDE,
     ATTR_LONGITUDE,
+    ATTR_ELEVATION,
+    ATTR_ELEVATION_UNIT,
     ATTR_TIMEZONE,
+    UNIT_METERS,
+    UNIT_FEET,
+    FEET_TO_METERS,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -58,6 +64,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         "config": entry.data,
         "last_lat": None,
         "last_lon": None,
+        "last_elev": None,
         "unsub": None,
     }
 
@@ -111,6 +118,8 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         """Service to set timezone based on coordinates."""
         latitude = call.data[ATTR_LATITUDE]
         longitude = call.data[ATTR_LONGITUDE]
+        elevation = call.data.get(ATTR_ELEVATION)
+        elevation_unit = call.data.get(ATTR_ELEVATION_UNIT, UNIT_METERS)
 
         if not TZFPY_AVAILABLE:
             _LOGGER.error("tzfpy not available, cannot look up timezone")
@@ -126,17 +135,39 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             )
             return
 
-        await hass.config.async_update(
-            latitude=latitude,
-            longitude=longitude,
-            time_zone=timezone,
-        )
-        _LOGGER.info(
-            "Location updated to: %s, %s (timezone: %s)",
-            latitude,
-            longitude,
-            timezone,
-        )
+        # Convert elevation to meters if provided in feet
+        if elevation is not None and elevation_unit == UNIT_FEET:
+            elevation = elevation * FEET_TO_METERS
+            _LOGGER.debug(
+                "Converted elevation from feet to meters: %.1f m",
+                elevation,
+            )
+
+        update_kwargs = {
+            "latitude": latitude,
+            "longitude": longitude,
+            "time_zone": timezone,
+        }
+        if elevation is not None:
+            update_kwargs["elevation"] = elevation
+
+        await hass.config.async_update(**update_kwargs)
+
+        if elevation is not None:
+            _LOGGER.info(
+                "Location updated to: %s, %s, elevation %s m (timezone: %s)",
+                latitude,
+                longitude,
+                elevation,
+                timezone,
+            )
+        else:
+            _LOGGER.info(
+                "Location updated to: %s, %s (timezone: %s)",
+                latitude,
+                longitude,
+                timezone,
+            )
 
     hass.services.async_register(
         DOMAIN,
@@ -152,6 +183,10 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         schema=vol.Schema({
             vol.Required(ATTR_LATITUDE): cv.latitude,
             vol.Required(ATTR_LONGITUDE): cv.longitude,
+            vol.Optional(ATTR_ELEVATION): vol.Coerce(float),
+            vol.Optional(ATTR_ELEVATION_UNIT, default=UNIT_METERS): vol.In(
+                [UNIT_METERS, UNIT_FEET]
+            ),
         }),
     )
 
@@ -161,6 +196,7 @@ async def _async_setup_listeners(hass: HomeAssistant, entry: ConfigEntry) -> Non
     config = {**entry.data, **entry.options}
     lat_entity = config[CONF_LATITUDE_ENTITY]
     lon_entity = config[CONF_LONGITUDE_ENTITY]
+    elev_entity = config.get(CONF_ELEVATION_ENTITY)
     threshold = config.get(CONF_UPDATE_THRESHOLD, DEFAULT_UPDATE_THRESHOLD)
 
     data = hass.data[DOMAIN][entry.entry_id]
@@ -168,16 +204,21 @@ async def _async_setup_listeners(hass: HomeAssistant, entry: ConfigEntry) -> Non
     # Initialize with current HA config
     data["last_lat"] = hass.config.latitude
     data["last_lon"] = hass.config.longitude
+    data["last_elev"] = hass.config.elevation
 
     @callback
     def async_handle_state_change(event: Event) -> None:
         """Handle state changes of GPS entities."""
         hass.async_create_task(_async_process_location_update(hass, entry, threshold))
 
-    # Track both entities
+    # Track lat/lon entities, and optionally elevation
+    entities_to_track = [lat_entity, lon_entity]
+    if elev_entity:
+        entities_to_track.append(elev_entity)
+
     unsub = async_track_state_change_event(
         hass,
-        [lat_entity, lon_entity],
+        entities_to_track,
         async_handle_state_change,
     )
     data["unsub"] = unsub
@@ -195,6 +236,7 @@ async def _async_process_location_update(
     config = {**entry.data, **entry.options}
     lat_entity = config[CONF_LATITUDE_ENTITY]
     lon_entity = config[CONF_LONGITUDE_ENTITY]
+    elev_entity = config.get(CONF_ELEVATION_ENTITY)
 
     data = hass.data[DOMAIN][entry.entry_id]
 
@@ -217,6 +259,27 @@ async def _async_process_location_update(
         )
         return
 
+    # Get elevation if configured
+    new_elev = None
+    if elev_entity:
+        elev_state = hass.states.get(elev_entity)
+        if elev_state is not None:
+            try:
+                new_elev = float(elev_state.state)
+                # Convert feet to meters if needed (HA uses meters)
+                unit = elev_state.attributes.get("unit_of_measurement", "").lower()
+                if unit in (UNIT_FEET, "feet"):
+                    new_elev = new_elev * FEET_TO_METERS
+                    _LOGGER.debug(
+                        "Converted elevation from feet to meters: %.1f m",
+                        new_elev,
+                    )
+            except (ValueError, TypeError):
+                _LOGGER.debug(
+                    "Invalid elevation value: %s",
+                    elev_state.state,
+                )
+
     # Check if we've moved enough
     last_lat = data.get("last_lat")
     last_lon = data.get("last_lon")
@@ -235,6 +298,8 @@ async def _async_process_location_update(
     # Update stored position
     data["last_lat"] = new_lat
     data["last_lon"] = new_lon
+    if new_elev is not None:
+        data["last_elev"] = new_elev
 
     # Look up timezone
     if not TZFPY_AVAILABLE:
@@ -250,21 +315,38 @@ async def _async_process_location_update(
             new_lon,
         )
         # Still update location even if timezone lookup fails
-        await hass.config.async_update(latitude=new_lat, longitude=new_lon)
+        update_kwargs = {"latitude": new_lat, "longitude": new_lon}
+        if new_elev is not None:
+            update_kwargs["elevation"] = new_elev
+        await hass.config.async_update(**update_kwargs)
         return
 
     # Update Home Assistant config
-    await hass.config.async_update(
-        latitude=new_lat,
-        longitude=new_lon,
-        time_zone=timezone,
-    )
-    _LOGGER.info(
-        "Arvee updated location to: %s, %s (timezone: %s)",
-        new_lat,
-        new_lon,
-        timezone,
-    )
+    update_kwargs = {
+        "latitude": new_lat,
+        "longitude": new_lon,
+        "time_zone": timezone,
+    }
+    if new_elev is not None:
+        update_kwargs["elevation"] = new_elev
+
+    await hass.config.async_update(**update_kwargs)
+
+    if new_elev is not None:
+        _LOGGER.info(
+            "Arvee updated location to: %s, %s, elevation %s m (timezone: %s)",
+            new_lat,
+            new_lon,
+            new_elev,
+            timezone,
+        )
+    else:
+        _LOGGER.info(
+            "Arvee updated location to: %s, %s (timezone: %s)",
+            new_lat,
+            new_lon,
+            timezone,
+        )
 
 
 def _haversine_miles(lat1: float, lon1: float, lat2: float, lon2: float) -> float:

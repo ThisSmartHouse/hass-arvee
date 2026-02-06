@@ -34,3 +34,24 @@ set_geo_timezone:
           min: -180
           max: 180
           mode: box
+    elevation:
+      name: Elevation
+      description: Elevation value (optional). Unit specified by elevation_unit.
+      required: false
+      example: 100
+      selector:
+        number:
+          mode: box
+    elevation_unit:
+      name: Elevation Unit
+      description: Unit for elevation value (m for meters, ft for feet)
+      required: false
+      default: m
+      example: m
+      selector:
+        select:
+          options:
+            - label: Meters
+              value: m
+            - label: Feet
+              value: ft
