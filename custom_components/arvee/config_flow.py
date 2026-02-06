@@ -26,6 +26,16 @@ _LOGGER = logging.getLogger(__name__)
 def get_schema(defaults: dict[str, Any] | None = None) -> vol.Schema:
     """Get the config schema with optional defaults."""
     defaults = defaults or {}
+
+    # Only set a default for elevation if one actually exists,
+    # otherwise an empty string default fails EntitySelector validation.
+    elevation_default = defaults.get(CONF_ELEVATION_ENTITY)
+    elevation_key = (
+        vol.Optional(CONF_ELEVATION_ENTITY, default=elevation_default)
+        if elevation_default
+        else vol.Optional(CONF_ELEVATION_ENTITY)
+    )
+
     return vol.Schema({
         vol.Required(
             CONF_LATITUDE_ENTITY,
@@ -39,10 +49,7 @@ def get_schema(defaults: dict[str, Any] | None = None) -> vol.Schema:
         ): selector.EntitySelector(
             selector.EntitySelectorConfig(domain=["sensor", "device_tracker", "input_number"]),
         ),
-        vol.Optional(
-            CONF_ELEVATION_ENTITY,
-            default=defaults.get(CONF_ELEVATION_ENTITY, ""),
-        ): selector.EntitySelector(
+        elevation_key: selector.EntitySelector(
             selector.EntitySelectorConfig(domain=["sensor", "device_tracker", "input_number"]),
         ),
         vol.Optional(
